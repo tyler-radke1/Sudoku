@@ -11,7 +11,7 @@ import SwiftUI
 struct SudokuApp: App {
     var body: some Scene {
         WindowGroup {
-            SudokuGridView(grid: SudokuGrid.testGrid)
+            SudokuGridView(grid: TestData.testGrid)
         }
     }
 }

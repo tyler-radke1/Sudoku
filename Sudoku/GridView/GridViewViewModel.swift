@@ -6,22 +6,63 @@
 //
 
 import Foundation
+import SwiftUI
+import UIKit
 
 extension SudokuGridView {
-    
     class ViewModel: ObservableObject {
-        init(grid: SudokuGrid, selectedCell: SudokuCell? = nil) {
-            self.grid = grid
-            self.selectedCell = selectedCell
-            self.isEditing = false
+        @Published var currentPuzzle: SudokuGrid?
+        var currentPuzzleSolution: SudokuGrid?
+        @Published var selectedCellPosition: Position?
+        @Published var isTakingNotes: Bool = false
+        @Published var selectedDifficulty: GridDifficulty = .easy
+        
+        init(grid: SudokuGrid) {
+            self.currentPuzzle = grid
+            self.selectedCellPosition = nil
+            self.isTakingNotes = false
         }
         
-        @Published var grid: SudokuGrid
-        @Published var selectedCell: SudokuCell?
-        @Published var isEditing: Bool = false
+        func fetchGrid(of difficulty: GridDifficulty) async throws {
+            let network = SudokuAPI()
+            
+            do {
+                let responseData = try await network.fetchSudokuResponse(of: difficulty)
+                
+                guard let response = network.decodeSudokuPuzzleResponse(from: responseData),
+                      let puzzle = network.decodePuzzle(from: response.puzzle),
+                      let solution = network.decodePuzzle(from: response.solution) else {
+                    throw SudokuAPI.APIError.errorDecodingPuzzleSolution
+                }
+                
+                await MainActor.run {
+                    self.currentPuzzle = puzzle
+                    self.currentPuzzleSolution = solution
+                }
+                
+            } catch {
+                throw SudokuAPI.APIError.errorDecodingPuzzleSolution
+            }
+        }
         
-        func cellTapped(_ cell: SudokuCell) {
-            selectedCell = cell
+        func cellTapped(position: Position) {
+            guard let currentPuzzle, currentPuzzle.getCell(at: position).isEditable else { return }
+            selectedCellPosition = position == selectedCellPosition ? nil : position
+        }
+        
+        func getCellColor(position: Position) -> Color {
+            return selectedCellPosition == position ? .pink.opacity(0.4) : .white
+        }
+        
+        func inputTapped(input: Int) {
+            guard var currentPuzzle, let selectedCellPosition, currentPuzzle.getCell(at: selectedCellPosition).isEditable else { return }
+            currentPuzzle.updateValue(at: selectedCellPosition, with: input)
+            
+            if isTakingNotes {
+                self.currentPuzzle?.rows[selectedCellPosition.row].cells[selectedCellPosition.column].pencilMarks.insert(input)
+            } else {
+                self.currentPuzzle = currentPuzzle                
+            }
         }
     }
 }
