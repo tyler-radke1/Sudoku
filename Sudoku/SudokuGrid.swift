@@ -16,16 +16,16 @@ struct SudokuGrid {
         
     }
     static var testGrid = SudokuGrid(rows: [
-        SudokuRow.testRow,
-        SudokuRow.testRow,
-        SudokuRow.testRow,
-        SudokuRow.testRow,
-        SudokuRow.testRow,
-        SudokuRow.testRow,
-        SudokuRow.testRow,
-        SudokuRow.testRow,
-        SudokuRow.testRow
-    ])
+    SudokuRow.testRow,
+    SudokuRow.testRow,
+    SudokuRow.testRow,
+    SudokuRow.testRow,
+    SudokuRow.testRow,
+    SudokuRow.testRow,
+    SudokuRow.testRow,
+    SudokuRow.testRow,
+    SudokuRow.testRow
+])
 }
 
 struct SudokuRow {

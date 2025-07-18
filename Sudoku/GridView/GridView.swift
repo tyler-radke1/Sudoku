@@ -7,21 +7,9 @@
 
 import SwiftUI
 
-// Preview
-struct ContentView: View {
-    var body: some View {
-        SudokuGridView(grid: SudokuGrid.testGrid)
-    }
-}
-
-#Preview {
-    ContentView()
-}
-import SwiftUI
-
 struct SudokuGridView: View {
     @State var vm: ViewModel
-    
+    @State var grid: SudokuGrid = SudokuGrid.testGrid
     init(grid: SudokuGrid) {
         self.vm = ViewModel(grid: grid)
     }
@@ -30,15 +18,22 @@ struct SudokuGridView: View {
         VStack(spacing: 2) {
             ForEach(0..<9, id: \.self) { rowIndex in
                 HStack(spacing: 2) {
-                    ForEach(0..<9, id: \.self) { colIndex in
-                        var cell = vm.grid.rows[rowIndex].cells[colIndex]
-                        SudokuCellView(cell: cell)
-                            .onTapGesture {
-                                cell.isSelected.toggle()
-                            }
+                    ForEach(0..<9, id: \.self) { cellIndex in
+                        SudokuCellView(cell: $grid.rows[rowIndex].cells[cellIndex])
                     }
                 }
             }
+//            ForEach(0..<9, id: \.self) { rowIndex in
+//                HStack(spacing: 2) {
+//                    ForEach(0..<9, id: \.self) { index in
+//                        var cell = vm.grid.rows[rowIndex].cells[index]
+//                        SudokuCellView(cell: cell)
+//                            .onTapGesture {
+//                                cell.isSelected.toggle()
+//                            }
+//                    }
+//                }
+//            }
             
             //Figure out spacing between hstack and hstack
             
@@ -87,5 +82,5 @@ struct SudokuGridView: View {
     }
     
     #Preview {
-        ContentView()
+        SudokuGridView(grid: SudokuGrid.testGrid)
     }
