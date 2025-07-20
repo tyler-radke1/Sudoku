@@ -17,6 +17,8 @@ extension SudokuGridView {
         @Published var isTakingNotes: Bool = false
         @Published var selectedDifficulty: GridDifficulty = .easy
         
+        var colorPalette = ColorPalette.default
+        
         init(grid: SudokuGrid) {
             self.currentPuzzle = grid
             self.selectedCellPosition = nil
@@ -51,18 +53,25 @@ extension SudokuGridView {
         }
         
         func getCellColor(position: Position) -> Color {
-            return selectedCellPosition == position ? .pink.opacity(0.4) : .white
+            return selectedCellPosition == position ? colorPalette.selectedCell : .white
         }
         
         func inputTapped(input: Int) {
             guard var currentPuzzle, let selectedCellPosition, currentPuzzle.getCell(at: selectedCellPosition).isEditable else { return }
+            
             currentPuzzle.updateValue(at: selectedCellPosition, with: input)
             
             if isTakingNotes {
-                self.currentPuzzle?.rows[selectedCellPosition.row].cells[selectedCellPosition.column].pencilMarks.insert(input)
-            } else {
-                self.currentPuzzle = currentPuzzle                
+                currentPuzzle.rows[selectedCellPosition.row].cells[selectedCellPosition.column].value = 0
+                
+                currentPuzzle.receivedPencilMark(input, for: selectedCellPosition)
             }
+            
+            self.currentPuzzle = currentPuzzle
+        }
+        
+        func solveButtonTapped() {
+            self.currentPuzzle = currentPuzzleSolution
         }
     }
 }

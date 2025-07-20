@@ -21,7 +21,8 @@ struct SudokuGridView: View {
             ForEach(0..<9, id: \.self) { rowIndex in
                 HStack(spacing: 2) {
                     ForEach(0..<9, id: \.self) { cellIndex in
-                        makeCellView(position: Position(row: rowIndex, column: cellIndex))
+                        makeCellViewWithNoteOverlay(position: Position(row: rowIndex, column: cellIndex))
+                        
                     }
                 }
             }
@@ -37,55 +38,50 @@ struct SudokuGridView: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.3))
+        .background(vm.colorPalette.background)
     }
     
     @ViewBuilder
-    func makeCellView(position: Position) -> some View {
+    func makeCellViewWithNoteOverlay(position: Position) -> some View {
         if let cell = $vm.currentPuzzle.wrappedValue?.getCell(at: position) {
             ZStack {
                 Rectangle()
                     .fill(vm.getCellColor(position: position))
                     .frame(width: 40, height: 40)
                     .border(Color.black, width: 1)
-                
-                Text(cell.value == 0 ? "" : "\(cell.value)")
-                    .font(.headline)
-                    .foregroundStyle(cell.isEditable ? Color.black : Color.blue)
+                    .gridBorderOverlay(for: position, color: vm.colorPalette.gridBorder)
+                    
+                    
+                // Pencil marks grid (only if no value and has notes)
+                if cell.value == 0 && !cell.pencilMarks.isEmpty {
+                    VStack(spacing: 0) {
+                        ForEach(0..<3, id: \.self) { row in
+                            HStack(spacing: 0) {
+                                ForEach(0..<3, id: \.self) { col in
+                                    let number = row * 3 + col + 1
+                                    Text(cell.pencilMarks.contains(number) ? "\(number)" : "")
+                                        .font(.caption2)
+                                        .foregroundColor(vm.colorPalette.pencilMarkText)
+                                        .frame(width: 13, height: 13, alignment: .center)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Main number (centered)
+                if cell.value != 0 {
+                    Text("\(cell.value)")
+                        .font(.headline)
+                        .foregroundStyle(cell.isEditable ? vm.colorPalette.userInputText : vm.colorPalette.givenText)
+                }
             }
-            
-            addNoteOverlay(for: cell)
-            
+            .frame(width: 40, height: 40)
             .onTapGesture {
                 vm.cellTapped(position: position)
             }
         }
     }
-    
-    @ViewBuilder
-    func addNoteOverlay(for cell: SudokuCell) -> some View {
-        if cell.value == 0 && !cell.pencilMarks.isEmpty {
-            GeometryReader { geometry in
-                let cellSize = geometry.size
-                let markSize = cellSize.width / 3
-
-                ZStack {
-//                    ForEach(0..<3, id: \.self) { row in
-//                        HStack(spacing: 0) {
-//                            ForEach(0..<3, id: \.self) { col in
-//                                let number = row * 3 + col + 1
-//                                Text(cell.pencilMarks.contains(number) ? "\(number)" : "")
-//                                    .font(.caption2)
-//                                    .foregroundColor(.yellow)
-//                                    .frame(width: markSize, height: markSize)
-//                            }
-//                        }
-//                    }
-                }
-            }
-        }
-    }
-
     
     @ViewBuilder
     func makeInputButtons() -> some View {
@@ -132,12 +128,12 @@ struct SudokuGridView: View {
             Button(action: {
                 vm.isTakingNotes.toggle()
             }) {
-                Label("Notes", systemImage: vm.isTakingNotes ? "pencil.circle.fill" : "pencil.circle" )
+                Label(vm.isTakingNotes ? "Disable Notes" : "Enable Notes", systemImage: vm.isTakingNotes ? "pencil.circle.fill" : "pencil.circle" )
                     .foregroundStyle(vm.isTakingNotes ? .blue : .gray)
             }
             
             Button(action: {
-                // solve logic
+                vm.solveButtonTapped()
             }) {
                 Label("Solve", systemImage: "checkmark.circle")
             }
