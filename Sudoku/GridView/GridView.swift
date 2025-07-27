@@ -100,38 +100,34 @@ struct SudokuGridView: View {
                 Button(action: {
                     vm.inputTapped(input: number)
                 }) {
-                    Label(title: {
-                        Text(number > 0 ? "\(number)" : "")
-                    }, icon: {
-                        number > 0 ? nil : Image(systemName: "delete.backward")
-                    })
-                        .frame(width: 35, height: 35)
-                        .background(Color.blue.opacity(0.2))
-                        .cornerRadius(5)
+                    ZStack {
+                        if number > 0 {
+                            Text("\(number)")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                        } else {
+                            Image(systemName: "delete.backward")
+                                .font(.headline)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .frame(width: 35, height: 35)
+                    .background(Color.blue.opacity(0.2))
+                    .cornerRadius(5)
                 }
             }
         }
     }
-    
+
     @ViewBuilder
     func makeSettingsToolbar() -> some View {
         // Toolbar at the top
         VStack {
             HStack(spacing: 6) {
-                // Difficulty Picker
-                Picker("Difficulty", selection: $vm.selectedDifficulty) {
-                    ForEach(GridDifficulty.allCases, id: \.self) { difficulty in
-                        Text(difficulty.rawValue.capitalized).tag(difficulty)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5) // shrinks down to 50% if needed
-                            .truncationMode(.tail)
-                    }
-                }
-                .pickerStyle(.menu)
-                
-                // New Puzzle Button
+
+               // New Puzzle Button
                 Button("New Puzzle") {
-                    vm.fetchGrid(of: vm.selectedDifficulty)
+                    vm.showingNewPuzzleDialogue = true
                 }
                 
                 // Pencil Button
@@ -148,6 +144,16 @@ struct SudokuGridView: View {
                     Label("Solve", systemImage: "checkmark.circle")
                 }
                 
+            }
+            
+            .confirmationDialog("Select Difficulty", isPresented: $vm.showingNewPuzzleDialogue, titleVisibility: .visible) {
+                ForEach(GridDifficulty.allCases, id: \.self) { difficulty in
+                    Button(difficulty.rawValue.capitalized) {
+                        vm.selectedDifficulty = difficulty
+                        vm.fetchGrid(of: difficulty)
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
             }
             
             Text("Time: \(vm.formattedTime)")

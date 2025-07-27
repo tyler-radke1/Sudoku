@@ -45,7 +45,7 @@ struct SudokuGrid: Equatable {
     }
 
     func checkForContradictions(position: Position) -> Bool {
-         checkRows(at: position) || checkColumns(at: position) || checkGrids(at: position)
+        return checkRows(at: position) || checkColumns(at: position) || checkGrids(at: position)
     }
     
     private func checkRows(at position: Position) -> Bool {

@@ -18,6 +18,7 @@ extension SudokuGridView {
         @Published var selectedDifficulty: GridDifficulty = .easy
         @Published var isShowingWinPopup = false
         @Published var elapsedTime: TimeInterval = 0
+        @Published var showingNewPuzzleDialogue: Bool = false
         private var timer: Timer?
         
         var formattedTime: String {
@@ -116,10 +117,15 @@ extension SudokuGridView {
         
        private func checkForWin() {
             isShowingWinPopup = currentPuzzle == currentPuzzleSolution
+           
+           if isShowingWinPopup {
+               stopTimer()
+           }
         }
         
         func solveButtonTapped() {
             self.currentPuzzle = currentPuzzleSolution
+            stopTimer()
         }
     }
 }
