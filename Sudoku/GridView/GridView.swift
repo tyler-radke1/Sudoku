@@ -21,7 +21,6 @@ struct SudokuGridView: View {
                 HStack(spacing: 2) {
                     ForEach(0..<9, id: \.self) { cellIndex in
                         reactiveCellView(in: $vm.currentPuzzle, at: Position(row: rowIndex, column: cellIndex))
-                        
                     }
                 }
             }
@@ -61,7 +60,7 @@ struct SudokuGridView: View {
 
                     
                 // Pencil marks grid (only if no value and has notes)
-                if cell.value == 0 && !cell.pencilMarks.isEmpty {
+                if cell.value == nil && !cell.pencilMarks.isEmpty {
                     VStack(spacing: 0) {
                         ForEach(0..<3, id: \.self) { row in
                             HStack(spacing: 0) {
@@ -164,5 +163,5 @@ struct SudokuGridView: View {
 }
 
 #Preview {
-    SudokuGridView(grid: TestData.testGrid)
+    SudokuGridView(grid: SudokuGrid(rows: []))
 }

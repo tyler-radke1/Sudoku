@@ -27,7 +27,7 @@ extension SudokuGridView {
             return String(format: "%02d:%02d", minutes, seconds)
         }
         
-        var colorPalette = ColorPalette.pinkTheme
+        var colorPalette = ColorPalette.neutralSteel
         
 
         func startTimer() {
@@ -96,24 +96,21 @@ extension SudokuGridView {
             guard var currentPuzzle,
                   let selectedCellPosition,
                   currentPuzzle.getCell(at: selectedCellPosition).isEditable else { return }
-
-            var cell = currentPuzzle.getCell(at: selectedCellPosition)
+            
+            let userInput = input == 0 ? nil : input
 
             if isTakingNotes {
-                cell.value = 0
-                currentPuzzle.receivedPencilMark(input, for: selectedCellPosition)
+                currentPuzzle.receivedPencilMark(userInput, for: selectedCellPosition)
             } else {
-                cell.value = input == cell.value ? nil : input
+                var cell = currentPuzzle.getCell(at: selectedCellPosition)
+                cell.value = input == cell.value ? nil : userInput
+                cell.pencilMarks = []
+                currentPuzzle.updateCell(at: selectedCellPosition, with: cell)
             }
 
-            
-            currentPuzzle.updateCell(at: selectedCellPosition, with: cell)
-            
             self.currentPuzzle = currentPuzzle
-
             checkForWin()
         }
-
         
        private func checkForWin() {
             isShowingWinPopup = currentPuzzle == currentPuzzleSolution

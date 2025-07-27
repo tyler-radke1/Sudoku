@@ -21,7 +21,8 @@ struct SudokuGrid: Equatable {
         rows[position.row].cells[position.column] = newCellCopy
     }
     
-    mutating func receivedPencilMark(_ mark: Int, for cellPosition: Position) {
+    mutating func receivedPencilMark(_ mark: Int?, for cellPosition: Position) {
+        guard let mark else { return }
         var cell = getCell(at: cellPosition)
         
         if cell.pencilMarks.contains(mark) {
@@ -42,6 +43,11 @@ struct SudokuGrid: Equatable {
             }
         }
         return true
+    }
+    
+    static func emptyGrid() -> SudokuGrid {
+        let emptyRow = SudokuRow(cells: Array(repeating: SudokuCell(value: nil, isEditable: true), count: 9))
+        return SudokuGrid(rows: Array(repeating: emptyRow, count: 9))
     }
 
     func checkForContradictions(position: Position) -> Bool {
