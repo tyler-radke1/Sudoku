@@ -50,7 +50,6 @@ struct SudokuGridView: View {
                 Rectangle()
                     .fill(vm.getCellColor(position: position))
                     .frame(width: 40, height: 40)
-                   // .border(cell.valueIsIncorrect ? vm.colorPalette.valueIncorrect: Color.black , width: 1)
                     .gridBorderOverlay(for: position, color: vm.colorPalette.gridBorder)
                     
                 // Incorrect value border and shadow overlay
