@@ -8,7 +8,6 @@
 import Foundation
 
 class TestData {
-
     static var testGrid = SudokuGrid(rows: [
     testRow,
     testRow,
@@ -24,7 +23,7 @@ class TestData {
     static var testRow: SudokuRow {
         var cells: [SudokuCell] = []
         for _ in 1...9 {
-            cells.append(SudokuCell(value: 0, isEditable: true))
+            cells.append(SudokuCell(value: nil, isEditable: true))
         }
         return SudokuRow(cells: cells)
     }

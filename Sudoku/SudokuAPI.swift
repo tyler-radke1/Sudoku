@@ -51,7 +51,7 @@ class SudokuAPI {
         
         for (index, value) in puzzleString.enumerated() {
             if let valueInt = Int(String(value)) {
-                let cell = SudokuCell(value: valueInt, isEditable: valueInt == 0)
+                let cell = SudokuCell(value: valueInt != 0 ? valueInt : nil, isEditable: valueInt == 0)
                 rows[index / 9].cells.append(cell)
             }
         }

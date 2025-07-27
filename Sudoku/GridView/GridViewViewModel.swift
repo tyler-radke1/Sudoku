@@ -16,8 +16,32 @@ extension SudokuGridView {
         @Published var selectedCellPosition: Position?
         @Published var isTakingNotes: Bool = false
         @Published var selectedDifficulty: GridDifficulty = .easy
+        @Published var isShowingWinPopup = false
+        @Published var elapsedTime: TimeInterval = 0
+        private var timer: Timer?
         
-        var colorPalette = ColorPalette.default
+        var formattedTime: String {
+            let minutes = Int(elapsedTime) / 60
+            let seconds = Int(elapsedTime) % 60
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
+        
+        var colorPalette = ColorPalette.pinkTheme
+        
+
+        func startTimer() {
+            timer?.invalidate()
+            elapsedTime = 0
+            timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                self.elapsedTime += 1
+            }
+        }
+
+        func stopTimer() {
+            timer?.invalidate()
+            timer = nil
+        }
+
         
         init(grid: SudokuGrid) {
             self.currentPuzzle = grid
@@ -25,7 +49,17 @@ extension SudokuGridView {
             self.isTakingNotes = false
         }
         
-        func fetchGrid(of difficulty: GridDifficulty) async throws {
+        func fetchGrid(of difficulty: GridDifficulty ) {
+            Task {
+                do {
+                    try await makeGridAPICall(of: difficulty)
+                } catch {
+                    print("Failed to fetch new puzzle:", error.localizedDescription)
+                }
+            }
+        }
+        
+        private func makeGridAPICall(of difficulty: GridDifficulty) async throws {
             let network = SudokuAPI()
             
             do {
@@ -40,6 +74,7 @@ extension SudokuGridView {
                 await MainActor.run {
                     self.currentPuzzle = puzzle
                     self.currentPuzzleSolution = solution
+                    startTimer()
                 }
                 
             } catch {
@@ -57,17 +92,30 @@ extension SudokuGridView {
         }
         
         func inputTapped(input: Int) {
-            guard var currentPuzzle, let selectedCellPosition, currentPuzzle.getCell(at: selectedCellPosition).isEditable else { return }
-            
-            currentPuzzle.updateValue(at: selectedCellPosition, with: input)
-            
+            guard var currentPuzzle,
+                  let selectedCellPosition,
+                  currentPuzzle.getCell(at: selectedCellPosition).isEditable else { return }
+
+            var cell = currentPuzzle.getCell(at: selectedCellPosition)
+
             if isTakingNotes {
-                currentPuzzle.rows[selectedCellPosition.row].cells[selectedCellPosition.column].value = 0
-                
+                cell.value = 0
                 currentPuzzle.receivedPencilMark(input, for: selectedCellPosition)
+            } else {
+                cell.value = input == cell.value ? nil : input
             }
+
+            
+            currentPuzzle.updateCell(at: selectedCellPosition, with: cell)
             
             self.currentPuzzle = currentPuzzle
+
+            checkForWin()
+        }
+
+        
+       private func checkForWin() {
+            isShowingWinPopup = currentPuzzle == currentPuzzleSolution
         }
         
         func solveButtonTapped() {
