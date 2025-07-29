@@ -15,11 +15,14 @@ extension SudokuGridView {
         var currentPuzzleSolution: SudokuGrid?
         @Published var selectedCellPosition: Position?
         @Published var isTakingNotes: Bool = false
-        @Published var selectedDifficulty: GridDifficulty = .easy
         @Published var isShowingWinPopup = false
         @Published var elapsedTime: TimeInterval = 0
         @Published var showingNewPuzzleDialogue: Bool = false
+        @Published var isShowingSolution = false
+        @Published var isShowingRestartGameWarning = false
         private var timer: Timer?
+        
+        var network = SudokuAPI()
         
         var formattedTime: String {
             let minutes = Int(elapsedTime) / 60
@@ -29,6 +32,24 @@ extension SudokuGridView {
         
         var colorPalette = ColorPalette.neutralSteel
         
+        func difficultySelected(_ difficulty: GridDifficulty) {
+            isShowingSolution = false
+            
+            stopTimer()
+            startTimer()
+            
+            Task {
+                do {
+                   let (puzzle, response) = try await network.fetchPuzzleAndSolution(of: difficulty)
+                    self.currentPuzzle = puzzle
+                    self.currentPuzzleSolution = response
+                } catch {
+                    throw error
+                }
+                
+            }
+        }
+
 
         func startTimer() {
             timer?.invalidate()
@@ -44,45 +65,13 @@ extension SudokuGridView {
         }
 
         
-        init(grid: SudokuGrid, difficulty: GridDifficulty) {
+        init(grid: SudokuGrid, gridSolution: SudokuGrid) {
             self.currentPuzzle = grid
+            self.currentPuzzleSolution = gridSolution
             self.selectedCellPosition = nil
             self.isTakingNotes = false
-            self.selectedDifficulty = difficulty
         }
         
-        func fetchGrid(of difficulty: GridDifficulty ) {
-            Task {
-                do {
-                    try await makeGridAPICall(of: difficulty)
-                } catch {
-                    print("Failed to fetch new puzzle:", error.localizedDescription)
-                }
-            }
-        }
-        
-        private func makeGridAPICall(of difficulty: GridDifficulty) async throws {
-            let network = SudokuAPI()
-            
-            do {
-                let responseData = try await network.fetchSudokuResponse(of: difficulty)
-                
-                guard let response = network.decodeSudokuPuzzleResponse(from: responseData),
-                      let puzzle = network.decodePuzzle(from: response.puzzle),
-                      let solution = network.decodePuzzle(from: response.solution) else {
-                    throw SudokuAPI.APIError.errorDecodingPuzzleSolution
-                }
-                
-                await MainActor.run {
-                    self.currentPuzzle = puzzle
-                    self.currentPuzzleSolution = solution
-                    startTimer()
-                }
-                
-            } catch {
-                throw SudokuAPI.APIError.errorDecodingPuzzleSolution
-            }
-        }
         
         func cellTapped(position: Position) {
             guard let currentPuzzle, currentPuzzle.getCell(at: position).isEditable else { return }
@@ -123,6 +112,7 @@ extension SudokuGridView {
         
         func solveButtonTapped() {
             self.currentPuzzle = currentPuzzleSolution
+            isShowingSolution = true
             stopTimer()
         }
     }

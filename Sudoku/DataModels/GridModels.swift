@@ -7,8 +7,14 @@
 
 import Foundation
 
-struct SudokuGrid: Equatable {
+struct SudokuGrid: Equatable, Identifiable {
     var rows: [SudokuRow]
+    var id: UUID
+    
+    init(rows: [SudokuRow]) {
+        self.rows = rows
+        self.id = UUID()
+    }
     
     func getCell(at position: Position) -> SudokuCell {
         return rows[position.row].cells[position.column]

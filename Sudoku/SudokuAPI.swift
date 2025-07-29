@@ -58,4 +58,17 @@ class SudokuAPI {
         
         return SudokuGrid(rows: rows)
     }
+    
+    func fetchPuzzleAndSolution(of difficulty: GridDifficulty) async throws -> (puzzle: SudokuGrid, solution: SudokuGrid) {
+        let network = SudokuAPI()
+        let responseData = try await network.fetchSudokuResponse(of: difficulty)
+
+        guard let response = network.decodeSudokuPuzzleResponse(from: responseData),
+              let puzzle = network.decodePuzzle(from: response.puzzle),
+              let solution = network.decodePuzzle(from: response.solution) else {
+            throw SudokuAPI.APIError.errorDecodingPuzzleSolution
+        }
+
+        return (puzzle, solution)
+    }
 }

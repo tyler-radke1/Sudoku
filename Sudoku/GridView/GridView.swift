@@ -9,40 +9,82 @@ import SwiftUI
 
 struct SudokuGridView: View {
     @StateObject var vm: ViewModel
-    init(grid: SudokuGrid, difficulty: GridDifficulty) {
-        _vm = StateObject(wrappedValue: ViewModel(grid: grid, difficulty: difficulty))
+    @Environment(\.dismiss) var dismiss
+    
+    init(grid: SudokuGrid, gridSolution: SudokuGrid) {
+        _vm = StateObject(wrappedValue: ViewModel(grid: grid, gridSolution: gridSolution))
     }
     
     var body: some View {
-        VStack(spacing: 2) {
-            makeSettingsToolbar()
-            
-            ForEach(0..<9, id: \.self) { rowIndex in
-                HStack(spacing: 2) {
-                    ForEach(0..<9, id: \.self) { cellIndex in
-                        reactiveCellView(in: $vm.currentPuzzle, at: Position(row: rowIndex, column: cellIndex))
+        NavigationStack {
+            ZStack {
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(red: 0.25, green: 0.40, blue: 0.65),
+                        Color(red: 0.70, green: 0.80, blue: 0.90),   // pale steel blue
+                    ]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                .ignoresSafeArea()
+                VStack(spacing: 2) {
+                    makeSettingsToolbar()
+                    
+                    ForEach(0..<9, id: \.self) { rowIndex in
+                        HStack(spacing: 2) {
+                            ForEach(0..<9, id: \.self) { cellIndex in
+                                reactiveCellView(in: $vm.currentPuzzle, at: Position(row: rowIndex, column: cellIndex))
+                            }
+                        }
+                    }
+                    
+                    makeInputButtons()
+                        .padding(.top, 20)
+                }
+                .alert("You Won!", isPresented: $vm.isShowingWinPopup) {
+                    Button("Start Over") {
+                        //MARK: Add difficulty var to grid object, store it when pulled from API. Then just use vm.puzzle.difficulty.
+                        vm.difficultySelected(.medium)
+                    }
+                    Button("Dismiss", role: .cancel) { }
+                } message: {
+                    Text("Congratulations! You've completed the puzzle.")
+                }
+                
+                .confirmationDialog("Exit Game?", isPresented: $vm.isShowingRestartGameWarning, titleVisibility: .visible) {
+                    Button("Exit", role: .destructive) {
+                        dismiss()
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("Are you sure you want to exit? All progress will be lost.")
+                }
+
+                
+                .padding()
+                .navigationBarTitle("Sudoku")
+                .background(vm.colorPalette.background)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            vm.isShowingRestartGameWarning.toggle()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .imageScale(.large)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary) // or .white if you're on a dark background
+                        }
                     }
                 }
+                
+                .onAppear {
+                    vm.startTimer()
+                }
             }
-            
-            makeInputButtons()
-                .padding(.top, 20)
         }
-        .alert("You Won!", isPresented: $vm.isShowingWinPopup) {
-            Button("Start Over") {
-                vm.fetchGrid(of: vm.selectedDifficulty)
-            }
-            Button("Dismiss", role: .cancel) { }
-        } message: {
-            Text("Congratulations! You've completed the puzzle.")
-        }
-
-        .task {
-            vm.fetchGrid(of: vm.selectedDifficulty)
-        }
-        .padding()
-        .background(vm.colorPalette.background)
     }
+    
     @ViewBuilder
     func reactiveCellView(in puzzle: Binding<SudokuGrid?>, at position: Position) -> some View {
         if let cell = puzzle.wrappedValue?.getCell(at: position) {
@@ -51,13 +93,13 @@ struct SudokuGridView: View {
                     .fill(vm.getCellColor(position: position))
                     .frame(width: 40, height: 40)
                     .gridBorderOverlay(for: position, color: vm.colorPalette.gridBorder)
-                    
+                
                 // Incorrect value border and shadow overlay
-                 RoundedRectangle(cornerRadius: 4)
-                     .stroke(cell.valueIsIncorrect ? vm.colorPalette.valueIncorrect : Color.black, lineWidth: cell.valueIsIncorrect ? 3 : 1)
-                     .shadow(color: cell.valueIsIncorrect ? vm.colorPalette.valueIncorrect.opacity(0.6) : .clear, radius: 4)
-
-                    
+                RoundedRectangle(cornerRadius: 4)
+                    .stroke(cell.valueIsIncorrect ? vm.colorPalette.valueIncorrect : Color.black, lineWidth: cell.valueIsIncorrect ? 3 : 1)
+                    .shadow(color: cell.valueIsIncorrect ? vm.colorPalette.valueIncorrect.opacity(0.6) : .clear, radius: 4)
+                
+                
                 // Pencil marks grid (only if no value and has notes)
                 if cell.value == nil && !cell.pencilMarks.isEmpty {
                     VStack(spacing: 0) {
@@ -74,7 +116,7 @@ struct SudokuGridView: View {
                         }
                     }
                 }
-
+                
                 // Main number (centered)
                 if let cellValue = cell.value {
                     Text("\(cellValue)")
@@ -116,24 +158,24 @@ struct SudokuGridView: View {
             }
         }
     }
-
+    
     @ViewBuilder
     func makeSettingsToolbar() -> some View {
         // Toolbar at the top
         VStack {
             HStack(spacing: 6) {
-
-               // New Puzzle Button
-                Button("New Puzzle") {
-                    vm.showingNewPuzzleDialogue = true
-                }
-                
                 // Pencil Button
                 Button(action: {
                     vm.isTakingNotes.toggle()
                 }) {
                     Label(vm.isTakingNotes ? "Disable Notes" : "Enable Notes", systemImage: vm.isTakingNotes ? "pencil.circle.fill" : "pencil.circle" )
                         .foregroundStyle(vm.isTakingNotes ? .blue : .gray)
+                }
+                
+                if $vm.isShowingSolution.wrappedValue {
+                    Button("Start New Game") {
+                        vm.difficultySelected(.medium)
+                    }
                 }
                 
                 Button(action: {
@@ -147,20 +189,20 @@ struct SudokuGridView: View {
             .confirmationDialog("Select Difficulty", isPresented: $vm.showingNewPuzzleDialogue, titleVisibility: .visible) {
                 ForEach(GridDifficulty.allCases, id: \.self) { difficulty in
                     Button(difficulty.rawValue.capitalized) {
-                        vm.selectedDifficulty = difficulty
-                        vm.fetchGrid(of: difficulty)
+                        vm.difficultySelected(difficulty)
                     }
                 }
                 Button("Cancel", role: .cancel) { }
             }
             
             Text("Time: \(vm.formattedTime)")
-            .padding()
+                .foregroundStyle(vm.colorPalette.userInputText)
+                .padding()
         }
         
     }
 }
 
 #Preview {
-    SudokuGridView(grid: SudokuGrid(rows: []), difficulty: .easy)
+    SudokuGridView(grid: SudokuGrid(rows: []), gridSolution: SudokuGrid.emptyGrid())
 }

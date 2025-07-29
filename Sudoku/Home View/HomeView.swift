@@ -33,7 +33,17 @@ struct HomeView: View {
                 )
                 .foregroundColor(.blue)
             }
+            
+            if vm.isLoading {
+                    Color.black.opacity(0.4)
+                        .ignoresSafeArea()
+                    
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(2)
+                }
         }
+        
         .confirmationDialog("Select Difficulty", isPresented: $vm.showingNewPuzzleDialogue, titleVisibility: .visible) {
             ForEach(GridDifficulty.allCases, id: \.self) { difficulty in
                 Button(difficulty.rawValue.capitalized) {
@@ -43,8 +53,10 @@ struct HomeView: View {
             Button("Cancel", role: .cancel) { }
         }
         
-        .fullScreenCover(isPresented: $vm.isShowingGame) {
-            SudokuGridView(grid: SudokuGrid.emptyGrid(), difficulty: vm.selectedDifficulty)
+        .fullScreenCover(item: $vm.newPuzzle) { puzzle in
+            // newPuzzleSolution is set in the same spot as newPuzzle. If newPuzzle has a value, so does newPuzzleSolution. This fallback
+            // should never happen.
+            SudokuGridView(grid: puzzle, gridSolution: vm.newPuzzleSolution ?? SudokuGrid.emptyGrid())
         }
     }
     

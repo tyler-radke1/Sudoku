@@ -12,7 +12,6 @@ struct SudokuApp: App {
     var body: some Scene {
         WindowGroup {
             HomeView(vm: HomeView.ViewModel())
-            //SudokuGridView(grid: SudokuGrid.emptyGrid())
         }
     }
 }
