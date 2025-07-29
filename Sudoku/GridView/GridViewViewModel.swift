@@ -44,10 +44,11 @@ extension SudokuGridView {
         }
 
         
-        init(grid: SudokuGrid) {
+        init(grid: SudokuGrid, difficulty: GridDifficulty) {
             self.currentPuzzle = grid
             self.selectedCellPosition = nil
             self.isTakingNotes = false
+            self.selectedDifficulty = difficulty
         }
         
         func fetchGrid(of difficulty: GridDifficulty ) {

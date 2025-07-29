@@ -9,8 +9,8 @@ import SwiftUI
 
 struct SudokuGridView: View {
     @StateObject var vm: ViewModel
-    init(grid: SudokuGrid) {
-        _vm = StateObject(wrappedValue: ViewModel(grid: grid))
+    init(grid: SudokuGrid, difficulty: GridDifficulty) {
+        _vm = StateObject(wrappedValue: ViewModel(grid: grid, difficulty: difficulty))
     }
     
     var body: some View {
@@ -162,5 +162,5 @@ struct SudokuGridView: View {
 }
 
 #Preview {
-    SudokuGridView(grid: SudokuGrid(rows: []))
+    SudokuGridView(grid: SudokuGrid(rows: []), difficulty: .easy)
 }
